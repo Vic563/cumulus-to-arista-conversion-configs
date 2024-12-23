@@ -1,11 +1,11 @@
 import paramiko
-from getpass import getpass
 
 # SSH server details
 hostname = "icna.ssnc-corp.cloud"
 port = 8022
-username = input("Enter your username: ")
-password = getpass("Enter your password: ")
+# Hardcoded credentials for testing
+username = "dt232381"
+password = "hDx3MkyAkZFZbCAaE*PbX"
 
 # Device to connect to
 device_hostname = "icdlf115-cloud"
