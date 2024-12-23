@@ -99,15 +99,17 @@ try:
         while not output_bond_details.endswith(':~$ '):
             output_bond_details += shell.recv(1024).decode()
 
-        # Analyze the VLAN section
+        # Find and analyze ONLY the "All VLANs on L2 Port" section
         vlan_section_start = output_bond_details.find("All VLANs on L2 Port")
         if vlan_section_start != -1:
-            # Find the end of the section (next section starts with dashes)
-            vlan_section_end = output_bond_details.find("\n-", vlan_section_start + 1)
-            if vlan_section_end == -1:
+            # Find the end of this section (marked by next section "Untagged" or any other section)
+            vlan_section_end = output_bond_details.find("\nUntagged", vlan_section_start)
+            if vlan_section_end == -1:  # If "Untagged" not found, look for any section marker
+                vlan_section_end = output_bond_details.find("\n-", vlan_section_start + 1)
+            if vlan_section_end == -1:  # If no section markers found, use end of output
                 vlan_section_end = len(output_bond_details)
             
-            # Extract only the "All VLANs on L2 Port" section
+            # Extract ONLY the "All VLANs on L2 Port" section
             vlan_section = output_bond_details[vlan_section_start:vlan_section_end].split('\n')
             
             # Skip the header and dashed line, get only VLAN numbers
@@ -116,6 +118,11 @@ try:
                 line = line.strip()
                 if line and line.isdigit():
                     vlan_numbers.append(line)
+                    
+            print(f"\nDebug - Bond {bond}:")
+            print(f"All VLANs on L2 Port section:")
+            print('\n'.join(vlan_section))
+            print(f"VLAN numbers found: {vlan_numbers}")
             
             # Determine interface type based on number of VLANs
             if len(vlan_numbers) == 1:
