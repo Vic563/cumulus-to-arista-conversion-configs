@@ -1,10 +1,11 @@
 import paramiko
+from getpass import getpass
 
 # SSH server details
 hostname = "icna.ssnc-corp.cloud"
 port = 8022
 username = input("Enter your username: ")
-password = input("Enter your password: ")
+password = getpass("Enter your password: ")
 
 # Device to connect to
 device_hostname = "icdlf115-cloud"
@@ -99,43 +100,30 @@ try:
         # Analyze the VLAN section
         vlan_section_start = output_bond_details.find("All VLANs on L2 Port")
         if vlan_section_start != -1:
-            # Get the section after "All VLANs on L2 Port" header
-            vlan_section = output_bond_details[vlan_section_start:].split('\n')
+            # Find the end of the section (next section starts with dashes)
+            vlan_section_end = output_bond_details.find("\n-", vlan_section_start + 1)
+            if vlan_section_end == -1:
+                vlan_section_end = len(output_bond_details)
             
-            # Skip the header and dashed line
-            vlan_lines = [line.strip() for line in vlan_section[2:] if line.strip()]
+            # Extract only the "All VLANs on L2 Port" section
+            vlan_section = output_bond_details[vlan_section_start:vlan_section_end].split('\n')
             
-            # Only count lines that contain just numbers (VLANs)
-            vlan_numbers = [line for line in vlan_lines if line.isdigit()]
+            # Skip the header and dashed line, get only VLAN numbers
+            vlan_numbers = []
+            for line in vlan_section[2:]:  # Skip "All VLANs on L2 Port" and "--------------------"
+                line = line.strip()
+                if line and line.isdigit():
+                    vlan_numbers.append(line)
             
-            # If exactly one VLAN is listed, it's an access interface
+            # Determine interface type based on number of VLANs
             if len(vlan_numbers) == 1:
                 access_interfaces.append(bond)
-            # If more than one VLAN is listed, it's a trunk interface
             elif len(vlan_numbers) > 1:
                 trunk_interfaces.append(bond)
-            
-            print(f"\nDebug - Bond {bond}:")
-            print(f"VLAN section found: {vlan_lines}")
-            print(f"VLAN numbers found: {vlan_numbers}")
-            print(f"Interface type: {'access' if len(vlan_numbers) == 1 else 'trunk' if len(vlan_numbers) > 1 else 'unknown'}")
 
     print(f"\nAnalysis Results:")
     print(f"Trunk Interfaces: {trunk_interfaces}")
     print(f"Access Interfaces: {access_interfaces}")
-    print(f"Number of UP bond interfaces: {len(up_bond_interfaces)}")
-    print("UP Bond Interfaces and their UP Member Interfaces:")
-    for bond in up_bond_interfaces:
-        if bond != 'peerlink':
-            print(f"- {bond}")
-            for interface, speed, mode in up_member_interfaces:
-                if bond in mode:
-                    print(f"  - {interface}: Speed={speed}")
-    
-    print(f"\nNumber of UP interfaces (swp1-swp38): {up_count}")
-    print("UP Interfaces (swp1-swp38):")
-    for interface, speed, mode in up_interfaces:
-        print(f"- {interface}: Speed={speed}, Mode={mode}")
 
 except Exception as e:
     print(f"An error occurred: {e}")
