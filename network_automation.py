@@ -99,13 +99,26 @@ try:
         # Analyze the VLAN section
         vlan_section_start = output_bond_details.find("All VLANs on L2 Port")
         if vlan_section_start != -1:
-            vlan_section = output_bond_details[vlan_section_start:].split('\n')[2:]
-            vlan_numbers = [line.strip() for line in vlan_section if line.strip().isdigit()]
-
-            if len(vlan_numbers) > 1:
-                trunk_interfaces.append(bond)
-            elif len(vlan_numbers) == 1:
+            # Get the section after "All VLANs on L2 Port" header
+            vlan_section = output_bond_details[vlan_section_start:].split('\n')
+            
+            # Skip the header and dashed line
+            vlan_lines = [line.strip() for line in vlan_section[2:] if line.strip()]
+            
+            # Only count lines that contain just numbers (VLANs)
+            vlan_numbers = [line for line in vlan_lines if line.isdigit()]
+            
+            # If exactly one VLAN is listed, it's an access interface
+            if len(vlan_numbers) == 1:
                 access_interfaces.append(bond)
+            # If more than one VLAN is listed, it's a trunk interface
+            elif len(vlan_numbers) > 1:
+                trunk_interfaces.append(bond)
+            
+            print(f"\nDebug - Bond {bond}:")
+            print(f"VLAN section found: {vlan_lines}")
+            print(f"VLAN numbers found: {vlan_numbers}")
+            print(f"Interface type: {'access' if len(vlan_numbers) == 1 else 'trunk' if len(vlan_numbers) > 1 else 'unknown'}")
 
     print(f"\nAnalysis Results:")
     print(f"Trunk Interfaces: {trunk_interfaces}")
