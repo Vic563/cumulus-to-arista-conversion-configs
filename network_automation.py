@@ -84,7 +84,30 @@ try:
             fields = line.split()
             up_bond_interfaces.append(fields[1])
 
+    # Check each UP bond interface for trunk or access configuration
+    trunk_interfaces = []
+    access_interfaces = []
+
+    for bond in up_bond_interfaces:
+        shell.send(f"net show interface {bond}\n")
+        output_bond_details = ''
+        while not output_bond_details.endswith(':~$ '):
+            output_bond_details += shell.recv(1024).decode()
+
+        # Analyze the VLAN section
+        vlan_section_start = output_bond_details.find("All VLANs on L2 Port")
+        if vlan_section_start != -1:
+            vlan_section = output_bond_details[vlan_section_start:].split('\n')[2:]
+            vlan_numbers = [line.strip() for line in vlan_section if line.strip().isdigit()]
+
+            if len(vlan_numbers) > 1:
+                trunk_interfaces.append(bond)
+            elif len(vlan_numbers) == 1:
+                access_interfaces.append(bond)
+
     print(f"\nAnalysis Results:")
+    print(f"Trunk Interfaces: {trunk_interfaces}")
+    print(f"Access Interfaces: {access_interfaces}")
     print(f"Number of UP bond interfaces: {len(up_bond_interfaces)}")
     print("UP Bond Interfaces and their UP Member Interfaces:")
     for bond in up_bond_interfaces:
