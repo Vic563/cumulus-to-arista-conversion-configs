@@ -84,6 +84,8 @@ try:
             fields = line.split()
             up_bond_interfaces.append(fields[1])
 
+    up_member_interfaces = []  # Initialize the list to store UP member interfaces
+
     # Check each UP bond interface for trunk or access configuration
     trunk_interfaces = []
     access_interfaces = []
