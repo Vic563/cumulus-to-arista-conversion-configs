@@ -67,27 +67,23 @@ try:
     for interface in up_swp_interfaces:
         print(f"- {interface}")
 
-    # Execute the 'net show interface bonds' command
+    # Execute the 'net show interface bonds' command to get UP bond interfaces
     shell.send("net show interface bonds\n")
 
     # Receive and print the output
     output_bonds = ''
     while not output_bonds.endswith(':~$ '):
         output_bonds += shell.recv(1024).decode()
-    print(output_bonds)
 
     # Get all UP bond interfaces
     up_bond_interfaces = []
     bond_lines = output_bonds.strip().split('\n')
 
     for line in bond_lines[1:]:  # Skip header line
-        if line.startswith('UP'):  # Only look at UP interfaces, ignore DN
+        if line.startswith('UP'):  # Only look at UP interfaces
             fields = line.split()
-            up_bond_interfaces.append(fields[1])
-
-    print(f"\nUP Bond Interfaces:")
-    for interface in up_bond_interfaces:
-        print(f"- {interface}")
+            if len(fields) > 1:  # Ensure we have at least 2 fields (state and interface name)
+                up_bond_interfaces.append(fields[1])
 
     # Check each UP bond interface for trunk or access configuration
     trunk_interfaces = []
