@@ -3,8 +3,8 @@ import paramiko
 # SSH server details
 hostname = "icna.ssnc-corp.cloud"
 port = 8022
-username = "dt232381"
-password = "hDx3MkyAkZFZbCAaE*PbX"  # Replace with your actual password
+username = input("Enter your username: ")
+password = input("Enter your password: ")
 
 # Device to connect to
 device_hostname = "icdlf115-cloud"
