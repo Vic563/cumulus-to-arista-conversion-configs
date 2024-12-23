@@ -47,25 +47,25 @@ try:
         output += shell.recv(1024).decode()
     print(output)
 
-    # Count interfaces and analyze their properties
+    # Get all UP SWP interfaces in range 1-38
+    up_swp_interfaces = []
     lines = output.strip().split('\n')
-    headers = lines[0].split()
-    state_index = 0
-    speed_index = 2
-    mode_index = 4
-
-    up_count = 0
-    up_interfaces = []
-
-    for line in lines[1:]:
-        if line.startswith('UP') or line.startswith('DN'):
+    
+    for line in lines[1:]:  # Skip header line
+        if line.startswith('UP'):  # Only look at UP interfaces, ignore DN
             fields = line.split()
-            if fields[1].startswith('swp') and 1 <= int(fields[1][3:]) <= 38:
-                if len(fields) > state_index and fields[state_index] == 'UP':
-                    up_count += 1
-                    speed = fields[speed_index] if len(fields) > speed_index else 'N/A'
-                    mode = fields[mode_index] if len(fields) > mode_index else 'N/A'
-                    up_interfaces.append((fields[1], speed, mode))
+            interface_name = fields[1]
+            if interface_name.startswith('swp'):
+                try:
+                    swp_num = int(interface_name[3:])  # Extract number after 'swp'
+                    if 1 <= swp_num <= 38:  # Only include interfaces in range 1-38
+                        up_swp_interfaces.append(interface_name)
+                except ValueError:
+                    continue  # Skip if number extraction fails
+
+    print(f"\nUP SWP Interfaces (1-38):")
+    for interface in up_swp_interfaces:
+        print(f"- {interface}")
 
     # Execute the 'net show interface bonds' command
     shell.send("net show interface bonds\n")
@@ -76,16 +76,18 @@ try:
         output_bonds += shell.recv(1024).decode()
     print(output_bonds)
 
-    # Analyze the 'net show interface bonds' output
-    bond_lines = output_bonds.strip().split('\n')
+    # Get all UP bond interfaces
     up_bond_interfaces = []
+    bond_lines = output_bonds.strip().split('\n')
 
-    for line in bond_lines[1:]:
-        if line.startswith('UP'):
+    for line in bond_lines[1:]:  # Skip header line
+        if line.startswith('UP'):  # Only look at UP interfaces, ignore DN
             fields = line.split()
             up_bond_interfaces.append(fields[1])
 
-    up_member_interfaces = []  # Initialize the list to store UP member interfaces
+    print(f"\nUP Bond Interfaces:")
+    for interface in up_bond_interfaces:
+        print(f"- {interface}")
 
     # Check each UP bond interface for trunk or access configuration
     trunk_interfaces = []
